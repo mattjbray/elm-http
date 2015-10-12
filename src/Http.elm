@@ -1,5 +1,6 @@
 module Http
     ( getString, get, post, send
+    , getWithAbort, sendWithAbort
     , url, uriEncode, uriDecode
     , Request
     , Body, empty, string, multipart
@@ -15,13 +16,13 @@ module Http
 @docs url, uriEncode, uriDecode
 
 # Fetch Strings and JSON
-@docs getString, get, post, Error
+@docs getString, get, getWithAbort, post, Error
 
 # Body Values
 @docs Body, empty, string, multipart, Data, stringData
 
 # Arbitrary Requests
-@docs send, Request, Settings, defaultSettings
+@docs send, sendWithAbort, Request, Settings, defaultSettings
 
 # Responses
 @docs Response, Value, fromJson, RawError
@@ -319,6 +320,13 @@ type Error
 
 -- ACTUALLY SEND REQUESTS
 
+{-| The same as `send`, but also returns a task you can use to abort the
+request.
+ -}
+sendWithAbort : Settings -> Request -> (Task RawError Response, Task () ())
+sendWithAbort =
+  Native.Http.send
+
 {-| Send a request exactly how you want it. The `Settings` argument lets you
 configure things like timeouts and progress monitoring. The `Request` argument
 defines all the information that will actually be sent along to a server.
@@ -333,8 +341,8 @@ defines all the information that will actually be sent along to a server.
         }
 -}
 send : Settings -> Request -> Task RawError Response
-send =
-  Native.Http.send
+send settings request =
+  fst (sendWithAbort settings request)
 
 
 -- HIGH-LEVEL REQUESTS
@@ -372,15 +380,22 @@ response.
 -}
 get : Json.Decoder value -> String -> Task Error value
 get decoder url =
+  fst (getWithAbort decoder url)
+
+
+{-| The same as `get`, but also returns a task you can use to abort the request.
+ -}
+getWithAbort : Json.Decoder value -> String -> (Task Error value, Task () ())
+getWithAbort decoder url =
   let request =
         { verb = "GET"
         , headers = []
         , url = url
         , body = empty
         }
+      (sendTask, abortTask) = sendWithAbort defaultSettings request
   in
-      fromJson decoder (send defaultSettings request)
-
+      (fromJson decoder sendTask, abortTask)
 
 {-| Send a POST request to the given URL, carrying the given body. You also
 specify how to decode the response with [a JSON decoder][json].
