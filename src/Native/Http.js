@@ -12,16 +12,16 @@ Elm.Native.Http.make = function(localRuntime) {
 	var List = Elm.List.make(localRuntime);
 	var Maybe = Elm.Maybe.make(localRuntime);
 	var Task = Elm.Native.Task.make(localRuntime);
-  var Utils = Elm.Native.Utils.make(localRuntime);
+	var Utils = Elm.Native.Utils.make(localRuntime);
 
 	function send(settings, request)
 	{
-    var req = new XMLHttpRequest();
+		var req = new XMLHttpRequest();
 
-    var abortTask = Task.asyncFunction(function(callback) {
-      req.abort();
-      return callback(Task.succeed(Utils.Tuple0));
-    });
+		var abortTask = Task.asyncFunction(function(callback) {
+			req.abort();
+			return callback(Task.succeed(Utils.Tuple0));
+		});
 
 		var sendTask = Task.asyncFunction(function(callback) {
 
@@ -94,9 +94,9 @@ Elm.Native.Http.make = function(localRuntime) {
 			}
 		});
 
-    return {ctor: "_Tuple2"
-            ,_0: sendTask
-            ,_1: abortTask};
+		return {ctor: "_Tuple2"
+		       ,_0: sendTask
+		       ,_1: abortTask};
 	}
 
 
